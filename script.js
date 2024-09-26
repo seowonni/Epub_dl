@@ -23,6 +23,34 @@ function cleanText(text) {
     return text; // Implement cleaning logic as needed
 }
 
+function createModal() {
+    const modal = document.createElement('div');
+    modal.id = 'downloadProgressModal';
+    modal.style.display = 'block';
+    modal.style.position = 'fixed';
+    modal.style.zIndex = '1';
+    modal.style.left = '0';
+    modal.style.top = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.overflow = 'auto';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.4)';
+
+    const modalContent = document.createElement('div');
+    modalContent.style.backgroundColor = '#fefefe';
+    modalContent.style.position = 'relative';
+    modalContent.style.margin = '15% auto 0';
+    modalContent.style.padding = '20px';
+    modalContent.style.border = '1px solid #888';
+    modalContent.style.width = '50%';
+    modalContent.style.textAlign = 'center';
+
+    modal.appendChild(modalContent);
+
+    return {modal, modalContent};
+}
+
+
 function createEPUBContent(novelText) {
     const epubHeader = `<?xml version="1.0" encoding="utf-8"?>
     <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="3.0">
