@@ -50,6 +50,51 @@ function createModal() {
     return {modal, modalContent};
 }
 
+function createEPUBFiles(title, chapters) {
+    const manifest = chapters.map((_, index) => `<item id="chapter${index + 1}" href="chapter${index + 1}.xhtml" media-type="application/xhtml+xml"/>`).join('\n');
+    const spine = chapters.map((_, index) => `<itemref idref="chapter${index + 1}"/>`).join('\n');
+
+    const contentOPF = `<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="3.0">
+    <metadata>
+        <title>${title}</title>
+        <author>Your Name</author>
+        <language>en</language>
+    </metadata>
+    <manifest>
+        ${manifest}
+        <item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    </manifest>
+    <spine>
+        ${spine}
+    </spine>
+</package>`;
+
+    const tocNCX = `<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/">
+    <head>
+        <meta name="dtb:uid" content="bookid"/>
+        <meta name="dtb:depth" content="1"/>
+        <meta name="dtb:totalPageCount" content="0"/>
+        <meta name="dtb:maxPageNumber" content="0"/>
+    </head>
+    <body>
+        <navMap>
+            ${chapters.map((_, index) => `<navPoint id="navPoint-${index + 1}" playOrder="${index + 1}"><navLabel><text>Chapter ${index + 1}</text></navLabel><content src="chapter${index + 1}.xhtml"/></navPoint>`).join('\n')}
+        </navMap>
+    </body>
+</ncx>`;
+
+    const chapterFiles = chapters.map((content, index) => {
+        return `<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Chapter ${index + 1}</title></head><body><h1>Chapter ${index + 1}</h1>${content}</body></html>`;
+    });
+
+    return {
+        contentOPF,
+        tocNCX,
+        chapterFiles
+    };
+}
 
 function createEPUBContent(novelText) {
     const epubHeader = `<?xml version="1.0" encoding="utf-8"?>
@@ -129,7 +174,7 @@ ${episodeUrl}.
             }
         }//!episode context if 문
         if (episodeContent) {
-            novelContent.push(`<section><h2>Episode ${i + 1}</h2>${episodeContent}</section>`);
+            novelContent.push(episodeContent);
         }
         const progress = ((startingIndex - i + 1) / (startingIndex + 1)) * 100;
         progressBar.style.width = `${progress}%`;
@@ -145,12 +190,36 @@ ${episodeUrl}.
         await delay(Math.random() * 500 + 1000);
     }
     document.body.removeChild(modal);
-    const epubData = createEPUBContent({title: title,content: novelContent.join('\n')});
-    const zip = new JSZip();
-    zip.file('content.opf', epubData.header);
-    zip.file('cover.xhtml', epubData.cover);
+    
+    //const epubData = createEPUBContent({title: title,content: novelContent.join('\n')});
+    //const zip = new JSZip();
+    //zip.file('content.opf', epubData.header);
+    //zip.file('cover.xhtml', epubData.cover);
     // Add your sections here, consider adding more files like images, etc.
-    zip.file('toc.ncx', '<?xml version="1.0" encoding="UTF-8"?><ncx></ncx>'); // Add proper TOC as needed
+    //zip.file('toc.ncx', '<?xml version="1.0" encoding="UTF-8"?><ncx></ncx>'); // Add proper TOC as needed
+    //const blob = await zip.generateAsync({ type: 'blob' });
+    //const a = document.createElement('a');
+    //a.href = URL.createObjectURL(blob);
+    //a.download = `${title}.epub`;
+    //a.click();
+    const { contentOPF, tocNCX, chapterFiles } = createEPUBFiles(title, chapters);
+
+    const zip = new JSZip();
+    zip.file('mimetype', 'application/epub+zip'); // Required for EPUB format
+    zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">
+    <rootfiles>
+        <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+    </rootfiles>
+</container>`);
+
+    zip.file('content.opf', contentOPF);
+    zip.file('toc.ncx', tocNCX);
+
+    chapterFiles.forEach((fileContent, index) => {
+        zip.file(`chapter${index + 1}.xhtml`, fileContent);
+    });
+
     const blob = await zip.generateAsync({ type: 'blob' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
