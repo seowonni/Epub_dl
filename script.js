@@ -45,8 +45,34 @@ function cleanText(text) {
 
     return text;
 }
+function createModal() {
+    const modal = document.createElement('div');
+    modal.id = 'downloadProgressModal';
+    modal.style.display = 'block';
+    modal.style.position = 'fixed';
+    modal.style.zIndex = '1';
+    modal.style.left = '0';
+    modal.style.top = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.overflow = 'auto';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.4)';
 
-async function downloadNovelAsEPUB(title, episodeLinks, startEpisode) {
+    const modalContent = document.createElement('div');
+    modalContent.style.backgroundColor = '#fefefe';
+    modalContent.style.position = 'relative';
+    modalContent.style.margin = '15% auto 0';
+    modalContent.style.padding = '20px';
+    modalContent.style.border = '1px solid #888';
+    modalContent.style.width = '50%';
+    modalContent.style.textAlign = 'center';
+
+    modal.appendChild(modalContent);
+
+    return {modal, modalContent};
+}
+
+async function downloadNovel(title, episodeLinks, startEpisode) {
     const zip = new JSZip();
     const novelFolder = zip.folder('EPUB');
     const contentFolder = novelFolder.folder('Text');
@@ -65,6 +91,19 @@ async function downloadNovelAsEPUB(title, episodeLinks, startEpisode) {
     let novelText = '';
 
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const {modal, modalContent} = createModal();
+    document.body.appendChild(modal);
+    const progressBar = document.createElement('div');
+    progressBar.style.width = '0%';
+    progressBar.style.height = '10px';
+    progressBar.style.backgroundColor = '#008CBA';
+    progressBar.style.marginTop = '10px';
+    progressBar.style.borderRadius = '3px';
+    modalContent.appendChild(progressBar);
+
+    const progressLabel = document.createElement('div');
+    progressLabel.style.marginTop = '5px';
+    modalContent.appendChild(progressLabel);
 
     const startTime = new Date();
     const startingIndex = episodeLinks.length - startEpisode;
@@ -80,15 +119,31 @@ async function downloadNovelAsEPUB(title, episodeLinks, startEpisode) {
             continue;
         }
 
-        console.log(`Downloading: ${title} - Episode ${startingIndex - i + 1}/${startingIndex + 1}`);
-
+        const logText = `Downloading: ${title} - Episode ${startingIndex - i + 1}/${startingIndex + 1}`;
+        console.log(logText);
         let episodeContent = await fetchNovelContent(episodeUrl);
 
         if (!episodeContent) {
             console.error(`Failed to fetch content for episode: ${episodeUrl}`);
-            continue;
+            const userConfirmed = await new Promise(resolve => {
+                const confirmResult = confirm(`이 페이지에 캡챠가 발견되었습니다.
+${episodeUrl}.
+새 탭에서 해당 페이지에 접속하여 캡챠를 풀고, 확인을 눌러주세요.`);
+                resolve(confirmResult);
+            });
+        if (userConfirmed) {
+                // Retry fetching the content
+                episodeContent = await fetchNovelContent(episodeUrl);
+                if (!episodeContent) {
+                    console.error(`Failed to fetch content for episode after CAPTCHA: ${episodeUrl}`);
+                    continue;  // Skip this episode if it still fails
+                }
+            } else {
+                console.log("User cancelled. Skipping this episode.");
+                continue;
+            }
         }
-
+        
         const fileName = `chapter${startingIndex - i + 1}.xhtml`;
         const xhtmlContent = `<?xml version="1.0" encoding="utf-8"?>
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -179,7 +234,7 @@ async function runCrawler() {
         return;
     }
 
-    downloadNovelAsEPUB(title, allEpisodeLinks, startEpisodeNumber);
+    downloadNovel(title, allEpisodeLinks, startEpisodeNumber);
 }
 
 runCrawler();
