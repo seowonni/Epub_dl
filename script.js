@@ -1,5 +1,5 @@
 
-import JSZip from 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+//import JSZip from 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
 async function fetchNovelContent(url) {
     const response = await fetch(url);
 
