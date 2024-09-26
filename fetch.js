@@ -1,5 +1,5 @@
 (function() {
-    fetch('https://raw.githubusercontent.com/seowonni/newnovel-dl/main/script.js')
+    fetch('https://raw.githubusercontent.com/seowonni/Epub_dl/main/script.js')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch script: ${response.statusText}`);
