@@ -15,9 +15,9 @@ browser-based novel downloader for 📖🐰 (stable)
 ## Usage (사용 전 상단 star 부탁드립니다!)
 
 ### Via Bookmark (다회성 사용/권장)
-1. 아래 [스크립트](https://raw.githubusercontent.com/seowonni/newnovel-dl/main/bookmark.js)를 복사하기 (우측 복사버튼)
+1. 아래 [스크립트](https://raw.githubusercontent.com/seowonni/Epub_dl/main/bookmark.js)를 복사하기 (우측 복사버튼)
     ```javascript
-    javascript:(function(){fetch('https://raw.githubusercontent.com/seowonni/newnovel-dl/main/script.js').then(response=>{if(!response.ok){throw new Error(`Failed to fetch script: ${response.statusText}`);}return response.text();}).then(scriptContent=>{const script=document.createElement('script');script.textContent=scriptContent;document.head.appendChild(script);console.log('Script loaded and executed.');}).catch(error=>{console.error(error);});})();
+    javascript:(function(){fetch('https://raw.githubusercontent.com/seowonni/Epub_dl/main/script.js').then(response=>{if(!response.ok){throw new Error(`Failed to fetch script: ${response.statusText}`);}return response.text();}).then(scriptContent=>{const script=document.createElement('script');script.textContent=scriptContent;document.head.appendChild(script);console.log('Script loaded and executed.');}).catch(error=>{console.error(error);});})();
     ```
 2. 브라우저에서, `ctrl+shift+b` 를 통해 북마크바 표시하기
 3. `ctrl+d` 를 통해 아무 페이지에서 북마크 추가
