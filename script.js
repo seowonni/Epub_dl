@@ -160,6 +160,24 @@ ${episodeUrl}.
     a.href = URL.createObjectURL(blob);
     a.download = fileName;
     a.click();
+
+    const options = {
+                title: 'My Book Title',
+                author: 'Author Name',
+                content: [
+                    {
+                        title: 'Chapter 1',
+                        data: '<h1>Chapter 1</h1><p>This is the content of the first chapter.</p>'
+                    },
+                    {
+                        title: 'Chapter 2',
+                        data: '<h1>Chapter 2</h1><p>This is the content of the second chapter.</p>'
+                    }
+                ]
+            };
+
+            const epub = new Epub(options);
+            epub.save('my-book.epub')
 }
 
 function extractTitle() {
