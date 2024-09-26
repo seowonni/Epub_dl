@@ -1,4 +1,4 @@
-
+import JSZip from 'jszip';
 async function fetchNovelContent(url) {
     const response = await fetch(url);
 
