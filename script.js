@@ -1,5 +1,3 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
 async function fetchNovelContent(url) {
     const response = await fetch(url);
 
@@ -21,221 +19,73 @@ async function fetchNovelContent(url) {
     return cleanText(content.innerHTML);
 }
 
-function unescapeHTML(text) {
-    const entities = {
-        '&lt;': '<', '&gt;': '>', '&amp;': '&',
-        '&quot;': '"', '&apos;': "'", '&#039;': "'",
-        '&nbsp;': ' ', '&ndash;': '–', '&mdash;': '—',
-        '&lsquo;': '‘', '&rsquo;': '’', '&ldquo;': '“', '&rdquo;': '”'
-    };
-
-    return text.replace(/&[a-z]+;/g, (entity) => entities[entity] || entity);
-}
-
 function cleanText(text) {
-    text = text.replace(/<div>/g, '');
-    text = text.replace(/<\/div>/g, '');
-    text = text.replace(/<p>/g, '\n');
-    text = text.replace(/<\/p>/g, '\n');
-    text = text.replace(/<br\s*[/]?>/g, '\n');
-    text = text.replace(/<[^>]*>/g, '');
-    text = text.replace(/ {2,}/g, ' ');
-    text = text.replace(/\n{2,}/g, '\n\n');
-    text = unescapeHTML(text);
-
-    return text;
-}
-function createModal() {
-    const modal = document.createElement('div');
-    modal.id = 'downloadProgressModal';
-    modal.style.display = 'block';
-    modal.style.position = 'fixed';
-    modal.style.zIndex = '1';
-    modal.style.left = '0';
-    modal.style.top = '0';
-    modal.style.width = '100%';
-    modal.style.height = '100%';
-    modal.style.overflow = 'auto';
-    modal.style.backgroundColor = 'rgba(0,0,0,0.4)';
-
-    const modalContent = document.createElement('div');
-    modalContent.style.backgroundColor = '#fefefe';
-    modalContent.style.position = 'relative';
-    modalContent.style.margin = '15% auto 0';
-    modalContent.style.padding = '20px';
-    modalContent.style.border = '1px solid #888';
-    modalContent.style.width = '50%';
-    modalContent.style.textAlign = 'center';
-
-    modal.appendChild(modalContent);
-
-    return {modal, modalContent};
+    return text; // Implement cleaning logic as needed
 }
 
-async function downloadNovel(title, episodeLinks, startEpisode) {
-    const zip = new JSZip();
-    const novelFolder = zip.folder('EPUB');
-    const contentFolder = novelFolder.folder('Text');
-    
-    const mimetype = 'application/epub+zip';
-    zip.file('mimetype', mimetype);
-
-    const containerXML = `<?xml version="1.0" encoding="UTF-8" ?>
-    <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-        <rootfiles>
-            <rootfile full-path="EPUB/content.opf" media-type="application/oebps-package+xml"/>
-        </rootfiles>
-    </container>`;
-    zip.folder('META-INF').file('container.xml', containerXML);
-
-    let novelText = '';
-
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-    const {modal, modalContent} = createModal();
-    document.body.appendChild(modal);
-    const progressBar = document.createElement('div');
-    progressBar.style.width = '0%';
-    progressBar.style.height = '10px';
-    progressBar.style.backgroundColor = '#008CBA';
-    progressBar.style.marginTop = '10px';
-    progressBar.style.borderRadius = '3px';
-    modalContent.appendChild(progressBar);
-
-    const progressLabel = document.createElement('div');
-    progressLabel.style.marginTop = '5px';
-    modalContent.appendChild(progressLabel);
-
-    const startTime = new Date();
-    const startingIndex = episodeLinks.length - startEpisode;
-
-    let spineItems = '';
-    let manifestItems = '';
-
-    for (let i = startingIndex; i >= 0; i--) {
-        const episodeUrl = episodeLinks[i];
-
-        if (!episodeUrl.startsWith('https://booktoki')) {
-            console.log(`Skipping invalid episode link: ${episodeUrl}`);
-            continue;
-        }
-
-        const logText = `Downloading: ${title} - Episode ${startingIndex - i + 1}/${startingIndex + 1}`;
-        console.log(logText);
-        let episodeContent = await fetchNovelContent(episodeUrl);
-
-        if (!episodeContent) {
-            console.error(`Failed to fetch content for episode: ${episodeUrl}`);
-            const userConfirmed = await new Promise(resolve => {
-                const confirmResult = confirm(`이 페이지에 캡챠가 발견되었습니다.
-${episodeUrl}.
-새 탭에서 해당 페이지에 접속하여 캡챠를 풀고, 확인을 눌러주세요.`);
-                resolve(confirmResult);
-            });
-        if (userConfirmed) {
-                // Retry fetching the content
-                episodeContent = await fetchNovelContent(episodeUrl);
-                if (!episodeContent) {
-                    console.error(`Failed to fetch content for episode after CAPTCHA: ${episodeUrl}`);
-                    continue;  // Skip this episode if it still fails
-                }
-            } else {
-                console.log("User cancelled. Skipping this episode.");
-                continue;
-            }
-        }
-        
-        const fileName = `chapter${startingIndex - i + 1}.xhtml`;
-        const xhtmlContent = `<?xml version="1.0" encoding="utf-8"?>
-        <html xmlns="http://www.w3.org/1999/xhtml">
-        <head><title>${title} - Chapter ${startingIndex - i + 1}</title></head>
-        <body><h1>Chapter ${startingIndex - i + 1}</h1><p>${episodeContent}</p></body></html>`;
-        contentFolder.file(fileName, xhtmlContent);
-
-        manifestItems += `<item id="chapter${startingIndex - i + 1}" href="Text/${fileName}" media-type="application/xhtml+xml"/>`;
-        spineItems += `<itemref idref="chapter${startingIndex - i + 1}"/>`;
-
-        await delay(Math.random() * 500 + 1000);
-    }
-
-    const contentOpf = `<?xml version="1.0" encoding="UTF-8" ?>
+function createEPUBContent(novelText) {
+    const epubHeader = `<?xml version="1.0" encoding="utf-8"?>
     <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="3.0">
-        <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-            <dc:title>${title}</dc:title>
-            <dc:language>ko</dc:language>
-            <meta property="dcterms:modified">${new Date().toISOString().slice(0, 10)}</meta>
+        <metadata>
+            <title>${novelText.title}</title>
+            <author>Your Name</author>
+            <language>en</language>
         </metadata>
         <manifest>
-            ${manifestItems}
+            <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+            <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
         </manifest>
         <spine>
-            ${spineItems}
+            ${novelText.content}
         </spine>
     </package>`;
 
-    novelFolder.file('content.opf', contentOpf);
+    const coverHTML = `<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Cover</title></head><body><h1>${novelText.title}</h1></body></html>`;
+    
+    return {
+        header: epubHeader,
+        cover: coverHTML,
+    };
+}
+
+async function downloadNovel(title, episodeLinks, startEpisode) {
+    let novelContent = [];
+
+    for (let i = episodeLinks.length - startEpisode; i < episodeLinks.length; i++) {
+        const episodeUrl = episodeLinks[i];
+        const episodeContent = await fetchNovelContent(episodeUrl);
+        if (episodeContent) {
+            novelContent.push(`<section><h2>Episode ${i + 1}</h2>${episodeContent}</section>`);
+        }
+    }
+
+    const epubData = createEPUBContent({
+        title: title,
+        content: novelContent.join('\n')
+    });
+
+    const zip = new JSZip();
+    zip.file('content.opf', epubData.header);
+    zip.file('cover.xhtml', epubData.cover);
+    
+    // Add your sections here, consider adding more files like images, etc.
+    zip.file('toc.ncx', '<?xml version="1.0" encoding="UTF-8"?><ncx></ncx>'); // Add proper TOC as needed
 
     const blob = await zip.generateAsync({ type: 'blob' });
-    const fileName = `${title}(${startEpisode}~${episodeLinks.length}).epub`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = fileName;
+    a.download = `${title}.epub`;
     a.click();
 }
 
 async function runCrawler() {
-    const novelPageRule = 'https://booktoki';
-    let currentUrl = window.location.href;
-
-    const urlParts = currentUrl.split('?')[0];
-    currentUrl = urlParts;
-
-    if (!currentUrl.startsWith(novelPageRule)) {
-        console.log('This script should be run on the novel episode list page.');
-        return;
-    }
-
     const title = extractTitle();
-
-    if (!title) {
-        console.log('Failed to extract the novel title.');
-        return;
-    }
-
-    const totalPages = prompt(`소설 목록의 페이지 수를 입력하세요.`, '1');
-
-    if (!totalPages || isNaN(totalPages)) {
-        console.log('Invalid page number or user canceled the input.');
-        return;
-    }
-
-    const totalPagesNumber = parseInt(totalPages, 10);
-    const allEpisodeLinks = [];
-
-    for (let page = 1; page <= totalPagesNumber; page++) {
-        const nextPageUrl = `${currentUrl}?spage=${page}`;
-        const nextPageDoc = await fetchPage(nextPageUrl);
-        if (nextPageDoc) {
-            const nextPageLinks = Array.from(nextPageDoc.querySelectorAll('.item-subject')).map(link => link.getAttribute('href'));
-            allEpisodeLinks.push(...nextPageLinks);
-        }
-    }
-
+    const allEpisodeLinks = extractEpisodeLinks();
     const startEpisode = prompt(`다운로드를 시작할 회차 번호를 입력하세요 (1 부터 ${allEpisodeLinks.length}):`, '1');
 
-    if (!startEpisode || isNaN(startEpisode)) {
-        console.log('Invalid episode number or user canceled the input.');
-        return;
+    if (startEpisode) {
+        await downloadNovel(title, allEpisodeLinks, parseInt(startEpisode));
     }
-
-    const startEpisodeNumber = parseInt(startEpisode, 10);
-
-    if (startEpisodeNumber < 1 || startEpisodeNumber > allEpisodeLinks.length) {
-        console.log('Invalid episode number.');
-        return;
-    }
-
-    downloadNovel(title, allEpisodeLinks, startEpisodeNumber);
 }
 
 runCrawler();
-
