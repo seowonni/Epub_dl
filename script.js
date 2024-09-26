@@ -96,15 +96,15 @@ async function downloadNovel(title, episodeLinks, startEpisode) {
 
     const startTime = new Date();
     const startingIndex = episodeLinks.length - startEpisode;
-
-    for (let i = episodeLinks.length - startEpisode; i < episodeLinks.length; i++) {
+    for (let i = startingIndex; i >= 0; i--){
         const episodeUrl = episodeLinks[i];
-        const episodeContent = await fetchNovelContent(episodeUrl);
-        if (episodeContent) {
-            novelContent.push(`<section><h2>Episode ${i + 1}</h2>${episodeContent}</section>`);
+        if (!episodeUrl.startsWith('https://booktoki')) {
+            console.log(`Skipping invalid episode link: ${episodeUrl}`);
+            continue;
         }
         const logText = `Downloading: ${title} - Episode ${startingIndex - i + 1}/${startingIndex + 1}`;
         console.log(logText);
+        const episodeContent = await fetchNovelContent(episodeUrl);
         if (!episodeContent) {
             console.error(`Failed to fetch content for episode: ${episodeUrl}`);
 
@@ -128,6 +128,9 @@ ${episodeUrl}.
                 continue;
             }
         }//!episode context if 문
+        if (episodeContent) {
+            novelContent.push(`<section><h2>Episode ${i + 1}</h2>${episodeContent}</section>`);
+        }
         const progress = ((startingIndex - i + 1) / (startingIndex + 1)) * 100;
         progressBar.style.width = `${progress}%`;
 
