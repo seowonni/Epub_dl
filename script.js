@@ -145,7 +145,7 @@ async function downloadNovel(title, episodeLinks, startEpisode) {
     const startingIndex = episodeLinks.length - startEpisode;
     for (let i = startingIndex; i >= 0; i--){
         const episodeUrl = episodeLinks[i];
-        if (!episodeUrl.startsWith('https://booktoki')) {
+        if (!episodeUrl.startsWith('https://bookto')) {
             console.log(`Skipping invalid episode link: ${episodeUrl}`);
             continue;
         }
