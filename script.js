@@ -258,7 +258,7 @@ async function fetchPage(url) {
 
 
 async function runCrawler() {
-    const novelPageRule = 'https://booktoki';
+    const novelPageRule = 'https://bookto';
     let currentUrl = window.location.href;
 
     // Clean URL
